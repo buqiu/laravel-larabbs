@@ -6,27 +6,32 @@
 namespace App\Http\Controllers\Api\V1;
 
 use Auth;
+use Zend\Diactoros\Response as Psr7Response;
 use App\Http\Requests\Api\V1\AuthorizationRequest;
 use App\Http\Requests\Api\V1\SocialAuthorizationRequest;
 use App\Models\User;
 use Illuminate\Http\Request;
+use League\OAuth2\Server\AuthorizationServer;
+use League\OAuth2\Server\Exception\OAuthServerException;
+use Psr\Http\Message\ServerRequestInterface;
 
 class AuthorizationsController extends Controller
 {
     /**
      * 登录
      *
-     * @param AuthorizationRequest $request
+     * @param AuthorizationRequest $originRequest
+     * @param AuthorizationServer $server
+     * @param ServerRequestInterface $serverRequest
+     * @return mixed \Psr\Http\Message\ResponseInterface|void
      */
-    public function store(AuthorizationRequest $request)
+    public function store(AuthorizationRequest $originRequest, AuthorizationServer $server, ServerRequestInterface $serverRequest)
     {
-        $username = $request->username;
-        filter_var($username, FILTER_VALIDATE_EMAIL) ? $credentials['email'] = $username : $credentials['phone'] = $username;
-        $credentials['password'] = $request->password;
-        if (!$token = Auth::guard('api')->attempt($credentials)) {
-            return $this->response->errorUnauthorized(trans('auth.failed'));
+        try {
+            return $server->respondToAccessTokenRequest($serverRequest, new Psr7Response)->withStatus(201);
+        } catch (OAuthServerException $exception) {
+            return $this->response->errorUnauthorized($exception->getMessage());
         }
-        return $this->respondWithToken($token)->setStatusCode(201);
     }
 
     /**
@@ -85,12 +90,17 @@ class AuthorizationsController extends Controller
     /**
      * 刷新 token
      *
-     * @return mixed
+     * @param AuthorizationServer $server
+     * @param ServerRequestInterface $serverRequest
+     * @return mixed \Psr\Http\Message\ResponseInterface|void
      */
-    public function update()
+    public function update(AuthorizationServer $server, ServerRequestInterface $serverRequest)
     {
-        $token = Auth::guard('api')->refresh();
-        return $this->respondWithToken($token);
+        try {
+            return $server->respondToAccessTokenRequest($serverRequest, new Psr7Response);
+        } catch (OAuthServerException $exception) {
+            return $this->response->errorUnauthorized($exception->getMessage());
+        }
     }
 
     /**
@@ -100,7 +110,8 @@ class AuthorizationsController extends Controller
      */
     public function destroy()
     {
-        Auth::guard('api')->logout();
+        $this->user()->token()->revoke();
+
         return $this->response->noContent();
     }
 

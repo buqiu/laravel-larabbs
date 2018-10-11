@@ -58,7 +58,7 @@ class AuthorizationsController extends Controller
                 $token = array_get($response, 'access_token');
             } else {
                 $token = $request->access_token;
-                if ($type = 'weixin') {
+                if ($type == 'weixin') {
                     $driver->setOpenId($request->openid);
                 }
             }

@@ -1,0 +1,17 @@
+https://open.weixin.qq.com/connect/oauth2/authorize?appid=wxce60c2a8130bf854&redirect_uri=http://larabbs.buqiu.test&response_type=code&scope=snsapi_userinfo&state=STATE#wechat_redirect
+
+
+https://api.weixin.qq.com/sns/oauth2/access_token?appid=wxce60c2a8130bf854&secret=4c4e81ba5a07c7ce3c158e181d7b6a97&code=071RgZV600goaI1z56T60QUJV60RgZVL&grant_type=authorization_code
+
+$accessToken = '13_WRCGllcaQz_E_v4Ux-8U1XuqW472DkZiT0wOVFt4xBGZF3xLXma5lxr-5iWjKyiTenIuIt_2O7ekNvbvhEQH9w';
+$openID = 'ofB8-s37JlxuSBnp2whDNqB06Qds'
+$driver = Socialite::driver('weixin');
+$driver->setOpenId($openID)
+$oauthUser = $driver->userFromToken($accessToken);
+
+
+$code = '0018UbIc0H0Rzt1ta7Lc06AvIc08UbIf';
+$driver = Socialite::driver('weixin');
+$response = $driver->getAccessTokenResponse($code);
+$driver->setOpenId($response['openid']);
+$oauthUser = $driver->userFromToken($response['access_token']);
